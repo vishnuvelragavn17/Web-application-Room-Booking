@@ -43,7 +43,7 @@ exports.createBooking = async (req, res) => {
   session.startTransaction();
 
   try {
-    const { date, timeSlot, eventType, attendees, needHelper } = req.body;
+    const { date, timeSlot, eventType, attendees, needHelper, foodNeeded, extraItems } = req.body;
 
     // SERVER-SIDE PRICING LOGIC
     const FIXED_TOTAL_AMOUNT = 5000;
@@ -73,6 +73,8 @@ exports.createBooking = async (req, res) => {
       eventType,
       attendees,
       needHelper,
+      foodNeeded,
+      extraItems,
       totalAmount: totalAmount,
       advancePaid: advancePaid,
       status: 'confirmed', // Assuming immediate payment success in this flow

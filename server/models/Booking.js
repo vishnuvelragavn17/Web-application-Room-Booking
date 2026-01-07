@@ -20,6 +20,14 @@ const bookingSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  foodNeeded: {
+    type: String,
+    default: 'No',
+  },
+  extraItems: {
+    type: String,
+    default: '',
+  },
   status: {
     type: String,
     enum: ['confirmed', 'cancelled', 'completed'],

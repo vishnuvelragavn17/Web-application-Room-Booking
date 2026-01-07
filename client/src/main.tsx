@@ -7,6 +7,10 @@ import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import Profile from './pages/Profile';
 import BookingPage from './pages/BookingPage';
+import Receipt from './pages/Receipt';
+import Services from './pages/Services';
+import Contact from './pages/Contact';
+import Legal from './pages/Legal';
 import './index.css';
 
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
@@ -25,8 +29,16 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/legal" element={<Legal />} />
 
           {/* Protected Routes */}
+          <Route path="/receipt" element={
+            <ProtectedRoute>
+              <Receipt />
+            </ProtectedRoute>
+          } />
           <Route path="/profile" element={
             <ProtectedRoute>
               <Profile />

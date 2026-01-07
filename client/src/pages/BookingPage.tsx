@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
-import { Input } from '../components/ui/Input';
-import { Button } from '../components/ui/Button';
+import { Input } from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 
 const BookingPage: React.FC = () => {
@@ -18,6 +18,10 @@ const BookingPage: React.FC = () => {
   const [eventType, setEventType] = useState('');
   const [attendees, setAttendees] = useState('');
   const [needHelper, setNeedHelper] = useState(false);
+
+  // New Fields
+  const [foodNeeded, setFoodNeeded] = useState('No'); // Yes/No
+  const [extraItems, setExtraItems] = useState(''); // Text
 
   // Fetch slots when date changes
   useEffect(() => {
@@ -52,26 +56,23 @@ const BookingPage: React.FC = () => {
         return;
       }
 
-      // Mock Payment Logic
-      const amount = 5000; // Fixed price example
-      const advancePaid = 1000;
-
       const payload = {
         date,
         timeSlot: selectedSlot,
         eventType,
         attendees: Number(attendees),
         needHelper,
-        amount,
-        advancePaid
+        foodNeeded,
+        extraItems
       };
 
-      await axios.post('/api/bookings', payload, {
+      const res = await axios.post('/api/bookings', payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       toast.success('Booking Confirmed!');
-      navigate('/profile');
+      // Navigate to Receipt Page with data
+      navigate('/receipt', { state: { booking: res.data } });
 
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Booking failed');
@@ -79,17 +80,17 @@ const BookingPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md">
-      <h2 className="text-3xl font-bold mb-8 text-center">Book a Room</h2>
+    <div className="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-lg border-t-4 border-primary">
+      <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center text-primaryDark">Book Your Event</h2>
 
       {step === 1 && (
         <div className="space-y-6">
           {/* Date Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
+          <div className="bg-orange-50 p-4 rounded-lg">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Select Auspicious Date</label>
             <input
               type="date"
-              className="w-full p-2 border rounded-md"
+              className="w-full p-3 border border-orange-200 rounded-md focus:ring-primary focus:border-primary"
               value={date}
               min={new Date().toISOString().split('T')[0]}
               onChange={(e) => setDate(e.target.value)}
@@ -99,21 +100,21 @@ const BookingPage: React.FC = () => {
           {/* Slot Selection */}
           {date && (
             <div>
-              <h3 className="font-semibold mb-3">Select Time Slot</h3>
-              {loading ? <p>Loading slots...</p> : (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <h3 className="font-semibold mb-3 text-gray-800">Select Time Slot</h3>
+              {loading ? <p className="text-gray-500">Checking availability...</p> : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {slots.map((s) => (
                     <button
                       key={s.slot}
                       disabled={!s.isAvailable}
                       onClick={() => setSelectedSlot(s.slot)}
-                      className={`p-3 rounded-md text-sm font-medium border
-                        ${!s.isAvailable ? 'bg-gray-200 text-gray-400 cursor-not-allowed' :
-                          selectedSlot === s.slot ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 hover:border-indigo-500'}
+                      className={`p-3 rounded-md text-sm font-medium border transition duration-200
+                        ${!s.isAvailable ? 'bg-gray-100 text-gray-400 cursor-not-allowed' :
+                          selectedSlot === s.slot ? 'bg-primary text-white border-primary shadow-md' : 'bg-white text-gray-700 hover:border-primary hover:text-primary'}
                       `}
                     >
                       {s.slot}
-                      {!s.isAvailable && <span className="block text-xs text-red-500">Booked</span>}
+                      {!s.isAvailable && <span className="block text-xs text-red-400">Booked</span>}
                     </button>
                   ))}
                 </div>
@@ -121,20 +122,48 @@ const BookingPage: React.FC = () => {
             </div>
           )}
 
-          {/* Event Details */}
+          {/* Event Details Form */}
           {selectedSlot && (
-            <div className="space-y-4 border-t pt-4">
-               <h3 className="font-semibold">Event Details</h3>
-               <Input label="Event Type" value={eventType} onChange={(e) => setEventType(e.target.value)} placeholder="e.g. Birthday, Meeting" />
-               <Input label="Number of Attendees" type="number" value={attendees} onChange={(e) => setAttendees(e.target.value)} />
-               <div className="flex items-center">
-                  <input type="checkbox" checked={needHelper} onChange={(e) => setNeedHelper(e.target.checked)} className="mr-2" />
-                  <label>Need Helper Staff?</label>
+            <div className="space-y-4 pt-4 animate-fade-in">
+               <h3 className="font-semibold text-gray-800 border-b pb-2">Event Requirements</h3>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <Input label="Event Type (e.g., Puja, Wedding)" value={eventType} onChange={(e) => setEventType(e.target.value)} placeholder="Name of the ritual" />
+                 <Input label="Number of Attendees" type="number" value={attendees} onChange={(e) => setAttendees(e.target.value)} placeholder="Approx. guests" />
+               </div>
+
+               {/* New Fields */}
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">Food Arrangement Needed?</label>
+                 <select
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                    value={foodNeeded}
+                    onChange={(e) => setFoodNeeded(e.target.value)}
+                 >
+                   <option value="No">No, we will arrange our own (Veg only)</option>
+                   <option value="Yes">Yes, venue catering required</option>
+                 </select>
+               </div>
+
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">Items Needed for Ritual (Samagri)</label>
+                 <textarea
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                    rows={3}
+                    placeholder="List specific items needed (Flowers, Ghee, etc.)"
+                    value={extraItems}
+                    onChange={(e) => setExtraItems(e.target.value)}
+                 />
+               </div>
+
+               <div className="flex items-center bg-gray-50 p-3 rounded-md">
+                  <input type="checkbox" checked={needHelper} onChange={(e) => setNeedHelper(e.target.checked)} className="mr-3 h-5 w-5 text-primary" />
+                  <label className="text-sm text-gray-700">Need helper staff for assistance?</label>
                </div>
             </div>
           )}
 
-          <Button disabled={!selectedSlot || !eventType || !attendees} onClick={handleBook}>
+          <Button disabled={!selectedSlot || !eventType || !attendees} onClick={handleBook} className="w-full py-3 text-lg shadow-lg">
             Proceed to Payment
           </Button>
         </div>
@@ -143,22 +172,32 @@ const BookingPage: React.FC = () => {
       {/* Payment Step (Mock) */}
       {step === 2 && (
         <div className="text-center space-y-6">
-          <div className="bg-gray-50 p-6 rounded-lg">
-             <h3 className="text-xl font-bold mb-4">Payment Summary</h3>
-             <p>Date: {format(new Date(date), 'dd MMM yyyy')}</p>
-             <p>Time: {selectedSlot}</p>
-             <p>Event: {eventType}</p>
-             <div className="mt-4 border-t pt-4">
-               <p className="text-lg">Total Amount: $5000</p>
-               <p className="text-lg font-bold text-indigo-600">Advance Payable: $1000</p>
+          <div className="bg-orange-50 p-6 rounded-xl border border-orange-100">
+             <h3 className="text-xl font-bold mb-4 text-primaryDark">Booking Summary</h3>
+             <div className="text-left space-y-2 text-gray-700">
+               <p><span className="font-semibold">Date:</span> {format(new Date(date), 'dd MMM yyyy')}</p>
+               <p><span className="font-semibold">Time:</span> {selectedSlot}</p>
+               <p><span className="font-semibold">Event:</span> {eventType} ({attendees} guests)</p>
+               <p><span className="font-semibold">Food:</span> {foodNeeded}</p>
+             </div>
+
+             <div className="mt-6 border-t border-orange-200 pt-4">
+               <div className="flex justify-between text-lg">
+                 <span>Total Amount:</span>
+                 <span>$5000</span>
+               </div>
+               <div className="flex justify-between text-xl font-bold text-primary mt-2">
+                 <span>Advance Payable (20%):</span>
+                 <span>$1000</span>
+               </div>
              </div>
           </div>
 
           <div className="flex gap-4">
-             <Button variant="secondary" onClick={() => setStep(1)}>Back</Button>
-             <Button onClick={handlePaymentAndConfirm}>Pay & Confirm</Button>
+             <Button variant="secondary" onClick={() => setStep(1)} className="w-1/3">Back</Button>
+             <Button onClick={handlePaymentAndConfirm} className="w-2/3 shadow-xl">Pay & Confirm Booking</Button>
           </div>
-          <p className="text-xs text-gray-500">Note: This is a mock payment integration.</p>
+          <p className="text-xs text-gray-500">Secure Payment Gateway (Mock)</p>
         </div>
       )}
 
