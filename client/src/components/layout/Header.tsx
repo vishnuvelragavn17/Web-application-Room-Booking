@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Calendar, User, LogOut, Menu, X } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const token = localStorage.getItem('token');
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const { user, isAuthenticated, logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    logout();
     navigate('/login');
     setIsMenuOpen(false);
   };
@@ -20,7 +19,7 @@ const Header: React.FC = () => {
     { name: 'Contact', path: '/contact' },
   ];
 
-  if (user.role === 'admin') {
+  if (user?.role === 'admin') {
     navLinks.push({ name: 'Admin Dashboard', path: '/admin' });
   }
 
@@ -42,7 +41,7 @@ const Header: React.FC = () => {
               </Link>
             ))}
 
-            {token ? (
+            {isAuthenticated ? (
               <>
                 <Link to="/booking" className="bg-primary text-white hover:bg-primaryDark px-4 py-2 rounded-full text-sm font-medium shadow-md transition">Book Now</Link>
                 <Link to="/profile" className="flex items-center text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
@@ -78,7 +77,7 @@ const Header: React.FC = () => {
                 {link.name}
               </Link>
             ))}
-            {token ? (
+            {isAuthenticated ? (
               <>
                 <Link to="/booking" onClick={() => setIsMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-primary hover:bg-orange-50">Book Now</Link>
                 <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-orange-50">My Profile</Link>

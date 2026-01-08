@@ -23,6 +23,8 @@ This application allows users to register, login using their mobile and DOB, vie
    npm run dev
    ```
 
+   > **Note:** This application uses MongoDB Transactions. Ensure your MongoDB instance is running as a **Replica Set** (even a single-node replica set) for booking features to work correctly.
+
 3. **Frontend Setup**
    ```bash
    cd client

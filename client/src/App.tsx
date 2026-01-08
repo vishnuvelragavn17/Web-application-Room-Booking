@@ -12,25 +12,30 @@ import Contact from './pages/Contact';
 import Legal from './pages/Legal';
 import BookingHistory from './pages/BookingHistory';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import { useAuth } from './context/AuthContext';
 import './index.css';
 
 const ProtectedRoute = ({ children }: { children: React.ReactElement }) => {
-  const token = localStorage.getItem('token');
-  if (!token) {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) return <div>Loading...</div>;
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   return children;
 };
 
 const AdminRoute = ({ children }: { children: React.ReactElement }) => {
-  const token = localStorage.getItem('token');
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const { user, isAuthenticated, isLoading } = useAuth();
 
-  if (!token) {
+  if (isLoading) return <div>Loading...</div>;
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user.role !== 'admin') {
+  if (user?.role !== 'admin') {
     return <Navigate to="/" replace />;
   }
 

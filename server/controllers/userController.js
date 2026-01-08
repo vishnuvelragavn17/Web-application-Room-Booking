@@ -28,6 +28,7 @@ exports.updateUserProfile = async (req, res) => {
       user.state = req.body.state || user.state;
       user.pinCode = req.body.pinCode || user.pinCode;
       user.altMobile = req.body.altMobile || user.altMobile;
+      user.gender = req.body.gender || user.gender;
 
       const updatedUser = await user.save();
 
@@ -35,7 +36,12 @@ exports.updateUserProfile = async (req, res) => {
         _id: updatedUser._id,
         name: updatedUser.name,
         mobile: updatedUser.mobile,
+        role: updatedUser.role,
+        gender: updatedUser.gender,
+        altMobile: updatedUser.altMobile,
         address: updatedUser.address,
+        city: updatedUser.city,
+        state: updatedUser.state
       });
     } else {
       res.status(404).json({ message: 'User not found' });

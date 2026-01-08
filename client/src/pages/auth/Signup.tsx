@@ -5,6 +5,7 @@ import axios from 'axios';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { isValidMobile, isNotEmpty } from '../../utils/validation';
+import { useAuth } from '../../context/AuthContext';
 
 const Signup: React.FC = () => {
   const [step, setStep] = useState(1);
@@ -16,6 +17,7 @@ const Signup: React.FC = () => {
   });
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const validateStep1 = () => {
       const newErrors: {[key: string]: string} = {};
@@ -49,8 +51,7 @@ const Signup: React.FC = () => {
 
     try {
       const res = await axios.post('/api/auth/register', formData);
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data));
+      login(res.data, res.data.token);
       toast.success('Registration Successful');
       navigate('/');
     } catch (error: any) {
