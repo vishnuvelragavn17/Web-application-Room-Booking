@@ -43,7 +43,7 @@ exports.createBooking = async (req, res) => {
   session.startTransaction();
 
   try {
-    const { date, timeSlot, eventType, attendees, needHelper, foodNeeded, extraItems } = req.body;
+    const { date, timeSlot, eventType, attendees, needHelper, foodNeeded, extraItems, address, secondaryPhone } = req.body;
 
     // SERVER-SIDE PRICING LOGIC
     const FIXED_TOTAL_AMOUNT = 5000;
@@ -75,6 +75,8 @@ exports.createBooking = async (req, res) => {
       needHelper,
       foodNeeded,
       extraItems,
+      address,
+      secondaryPhone,
       totalAmount: totalAmount,
       advancePaid: advancePaid,
       status: 'confirmed', // Assuming immediate payment success in this flow
@@ -110,6 +112,61 @@ exports.getMyBookings = async (req, res) => {
     res.json(bookings);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Postpone (Reschedule) a booking
+// @route   PUT /api/bookings/:id/postpone
+exports.postponeBooking = async (req, res) => {
+  const session = await Booking.startSession();
+  session.startTransaction();
+
+  try {
+    const { date, timeSlot } = req.body;
+    const booking = await Booking.findById(req.params.id).session(session);
+
+    if (!booking) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    if (booking.user.toString() !== req.user.id) {
+      await session.abortTransaction();
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    if (booking.status === 'cancelled') {
+        await session.abortTransaction();
+        return res.status(400).json({ message: 'Cannot postpone cancelled booking' });
+    }
+
+    // Check availability for new slot
+    const existingBooking = await Booking.findOne({
+      date: new Date(date),
+      timeSlot,
+      status: 'confirmed'
+    }).session(session);
+
+    if (existingBooking) {
+      await session.abortTransaction();
+      return res.status(400).json({ message: 'New slot is already booked' });
+    }
+
+    // Update booking
+    booking.date = new Date(date);
+    booking.timeSlot = timeSlot;
+    // We might want to recalculate price or charge a fee here in a real app
+
+    await booking.save({ session });
+    await session.commitTransaction();
+
+    res.json({ message: 'Booking rescheduled successfully', booking });
+
+  } catch (error) {
+    await session.abortTransaction();
+    res.status(500).json({ message: error.message });
+  } finally {
+    session.endSession();
   }
 };
 

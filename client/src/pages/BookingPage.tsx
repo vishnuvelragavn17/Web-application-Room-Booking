@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
-import { Input } from '../../components/ui/Input';
-import { Button } from '../../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
+import { isValidMobile, isNotEmpty } from '../utils/validation';
 
 const BookingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -18,10 +19,15 @@ const BookingPage: React.FC = () => {
   const [eventType, setEventType] = useState('');
   const [attendees, setAttendees] = useState('');
   const [needHelper, setNeedHelper] = useState(false);
+  const [foodNeeded, setFoodNeeded] = useState('No');
+  const [extraItems, setExtraItems] = useState('');
 
-  // New Fields
-  const [foodNeeded, setFoodNeeded] = useState('No'); // Yes/No
-  const [extraItems, setExtraItems] = useState(''); // Text
+  // Contact Fields
+  const [address, setAddress] = useState('');
+  const [secondaryPhone, setSecondaryPhone] = useState('');
+
+  // Errors
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
 
   // Fetch slots when date changes
   useEffect(() => {
@@ -42,8 +48,20 @@ const BookingPage: React.FC = () => {
     }
   };
 
+  const validateForm = () => {
+    const newErrors: {[key: string]: string} = {};
+    if (!isNotEmpty(eventType)) newErrors.eventType = 'Event type is required';
+    if (!isNotEmpty(attendees)) newErrors.attendees = 'Attendees count is required';
+    if (!isNotEmpty(address)) newErrors.address = 'Address is required';
+    if (isNotEmpty(secondaryPhone) && !isValidMobile(secondaryPhone)) newErrors.secondaryPhone = 'Invalid mobile number (10 digits)';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleBook = async () => {
     if (!selectedSlot) return toast.error('Please select a time slot');
+    if (!validateForm()) return toast.error('Please fix form errors');
     setStep(2);
   };
 
@@ -63,7 +81,9 @@ const BookingPage: React.FC = () => {
         attendees: Number(attendees),
         needHelper,
         foodNeeded,
-        extraItems
+        extraItems,
+        address,
+        secondaryPhone
       };
 
       const res = await axios.post('/api/bookings', payload, {
@@ -80,11 +100,11 @@ const BookingPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-3xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-lg border-t-4 border-primary">
+    <div className="max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-xl shadow-lg border-t-4 border-primary my-8">
       <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center text-primaryDark">Book Your Event</h2>
 
       {step === 1 && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           {/* Date Selection */}
           <div className="bg-orange-50 p-4 rounded-lg">
             <label className="block text-sm font-medium text-gray-700 mb-2">Select Auspicious Date</label>
@@ -124,41 +144,69 @@ const BookingPage: React.FC = () => {
 
           {/* Event Details Form */}
           {selectedSlot && (
-            <div className="space-y-4 pt-4 animate-fade-in">
-               <h3 className="font-semibold text-gray-800 border-b pb-2">Event Requirements</h3>
+            <div className="space-y-6 pt-4 border-t">
+               <h3 className="text-xl font-semibold text-gray-800">Event & Contact Details</h3>
 
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <Input label="Event Type (e.g., Puja, Wedding)" value={eventType} onChange={(e) => setEventType(e.target.value)} placeholder="Name of the ritual" />
-                 <Input label="Number of Attendees" type="number" value={attendees} onChange={(e) => setAttendees(e.target.value)} placeholder="Approx. guests" />
-               </div>
-
-               {/* New Fields */}
-               <div>
-                 <label className="block text-sm font-medium text-gray-700 mb-1">Food Arrangement Needed?</label>
-                 <select
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                    value={foodNeeded}
-                    onChange={(e) => setFoodNeeded(e.target.value)}
-                 >
-                   <option value="No">No, we will arrange our own (Veg only)</option>
-                   <option value="Yes">Yes, venue catering required</option>
-                 </select>
-               </div>
-
-               <div>
-                 <label className="block text-sm font-medium text-gray-700 mb-1">Items Needed for Ritual (Samagri)</label>
-                 <textarea
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                    rows={3}
-                    placeholder="List specific items needed (Flowers, Ghee, etc.)"
-                    value={extraItems}
-                    onChange={(e) => setExtraItems(e.target.value)}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <Input
+                    label="Event Type"
+                    value={eventType}
+                    onChange={(e) => setEventType(e.target.value)}
+                    placeholder="e.g. Wedding, Naming Ceremony"
+                    error={errors.eventType}
+                 />
+                 <Input
+                    label="Attendees"
+                    type="number"
+                    value={attendees}
+                    onChange={(e) => setAttendees(e.target.value)}
+                    placeholder="Approx. guests"
+                    error={errors.attendees}
+                 />
+                 <Input
+                    label="Full Address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Booking party address"
+                    error={errors.address}
+                 />
+                 <Input
+                    label="Secondary Contact Number"
+                    value={secondaryPhone}
+                    onChange={(e) => setSecondaryPhone(e.target.value)}
+                    placeholder="Optional backup number"
+                    error={errors.secondaryPhone}
                  />
                </div>
 
-               <div className="flex items-center bg-gray-50 p-3 rounded-md">
-                  <input type="checkbox" checked={needHelper} onChange={(e) => setNeedHelper(e.target.checked)} className="mr-3 h-5 w-5 text-primary" />
-                  <label className="text-sm text-gray-700">Need helper staff for assistance?</label>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Food Arrangement</label>
+                        <select
+                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary h-[42px]"
+                            value={foodNeeded}
+                            onChange={(e) => setFoodNeeded(e.target.value)}
+                        >
+                        <option value="No">Self Arrangement (Veg)</option>
+                        <option value="Yes">Venue Catering Required</option>
+                        </select>
+                    </div>
+
+                     <div className="flex items-center bg-gray-50 p-3 rounded-md h-[42px] mt-6 md:mt-0">
+                        <input type="checkbox" checked={needHelper} onChange={(e) => setNeedHelper(e.target.checked)} className="mr-3 h-5 w-5 text-primary" />
+                        <label className="text-sm text-gray-700">Need helper staff?</label>
+                    </div>
+               </div>
+
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">Ritual Items (Samagri)</label>
+                 <textarea
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                    rows={3}
+                    placeholder="List specific items needed..."
+                    value={extraItems}
+                    onChange={(e) => setExtraItems(e.target.value)}
+                 />
                </div>
             </div>
           )}

@@ -19,6 +19,15 @@ const userSchema = new mongoose.Schema({
   state: String,
   pinCode: String,
   altMobile: String,
+  gender: {
+    type: String,
+    enum: ['Male', 'Female', 'Other'],
+  },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user',
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

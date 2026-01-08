@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { format } from 'date-fns';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
+import { Link } from 'react-router-dom';
 
 interface User {
   name: string;
@@ -9,123 +11,113 @@ interface User {
   address?: string;
   city?: string;
   state?: string;
-}
-
-interface Booking {
-  _id: string;
-  date: string;
-  timeSlot: string;
-  status: string;
-  eventType: string;
-  totalAmount: number;
+  gender?: string;
+  altMobile?: string;
 }
 
 const Profile: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Edit State
+  const [formData, setFormData] = useState<User>({ name: '', mobile: '' });
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const config = { headers: { Authorization: `Bearer ${token}` } };
-
-        const userRes = await axios.get('/api/users/profile', config);
-        const bookingRes = await axios.get('/api/bookings/my', config);
-
-        setUser(userRes.data);
-        setBookings(bookingRes.data);
-      } catch (error) {
-        toast.error('Failed to load profile data');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    fetchProfile();
   }, []);
 
-  const handleCancel = async (id: string) => {
-    if (!confirm('Are you sure you want to cancel? Cancellation fee applies.')) return;
-
+  const fetchProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`/api/bookings/${id}/cancel`, {}, { headers: { Authorization: `Bearer ${token}` } });
-      toast.success('Booking Cancelled');
-      // Refresh list
-      setBookings(bookings.map(b => b._id === id ? { ...b, status: 'cancelled' } : b));
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Cancellation failed');
+      const res = await axios.get('/api/users/profile', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUser(res.data);
+      setFormData(res.data);
+    } catch (error) {
+      toast.error('Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.put('/api/users/profile', formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUser(res.data);
+      toast.success('Profile Updated');
+      setIsEditing(false);
+    } catch (error) {
+        toast.error('Update failed');
     }
   };
 
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-4xl mx-auto space-y-8">
       {/* User Info */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold mb-4">My Profile</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-gray-500">Name</p>
-            <p className="font-medium">{user?.name}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500">Mobile</p>
-            <p className="font-medium">{user?.mobile}</p>
-          </div>
-           <div>
-            <p className="text-sm text-gray-500">Address</p>
-            <p className="font-medium">{user?.address || 'N/A'}</p>
-          </div>
-           <div>
-            <p className="text-sm text-gray-500">City</p>
-            <p className="font-medium">{user?.city || 'N/A'}</p>
-          </div>
+      <div className="bg-white p-8 rounded-xl shadow-md">
+        <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-primaryDark">My Profile</h2>
+            {!isEditing && (
+                <button onClick={() => setIsEditing(true)} className="text-primary hover:underline font-medium">Edit Profile</button>
+            )}
         </div>
+
+        {isEditing ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input label="Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} disabled />
+                <Input label="Mobile" value={formData.mobile} onChange={(e) => setFormData({...formData, mobile: e.target.value})} disabled />
+                <Input label="Gender" value={formData.gender || ''} onChange={(e) => setFormData({...formData, gender: e.target.value})} placeholder="Male/Female" />
+                <Input label="Secondary Mobile" value={formData.altMobile || ''} onChange={(e) => setFormData({...formData, altMobile: e.target.value})} />
+                <Input label="Address" value={formData.address || ''} onChange={(e) => setFormData({...formData, address: e.target.value})} />
+                <Input label="City" value={formData.city || ''} onChange={(e) => setFormData({...formData, city: e.target.value})} />
+
+                <div className="md:col-span-2 flex justify-end gap-2 mt-4">
+                    <Button variant="secondary" onClick={() => setIsEditing(false)} className="w-auto">Cancel</Button>
+                    <Button onClick={handleUpdate} className="w-auto">Save Changes</Button>
+                </div>
+            </div>
+        ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-700">
+                <div>
+                    <p className="text-sm text-gray-500">Name</p>
+                    <p className="font-medium text-lg">{user?.name}</p>
+                </div>
+                <div>
+                    <p className="text-sm text-gray-500">Mobile</p>
+                    <p className="font-medium text-lg">{user?.mobile}</p>
+                </div>
+                <div>
+                    <p className="text-sm text-gray-500">Gender</p>
+                    <p className="font-medium text-lg">{user?.gender || 'Not set'}</p>
+                </div>
+                <div>
+                    <p className="text-sm text-gray-500">Secondary Mobile</p>
+                    <p className="font-medium text-lg">{user?.altMobile || 'Not set'}</p>
+                </div>
+                <div className="md:col-span-2">
+                    <p className="text-sm text-gray-500">Address</p>
+                    <p className="font-medium text-lg">{user?.address}, {user?.city}</p>
+                </div>
+            </div>
+        )}
       </div>
 
-      {/* Booking History */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold mb-4">Booking History</h2>
-        {bookings.length === 0 ? (
-          <p className="text-gray-500">No bookings found.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Event</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {bookings.map((booking) => (
-                  <tr key={booking._id}>
-                    <td className="px-6 py-4 whitespace-nowrap">{format(new Date(booking.date), 'dd MMM yyyy')}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{booking.timeSlot}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{booking.eventType}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                        ${booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                        {booking.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {booking.status === 'confirmed' && (
-                        <button onClick={() => handleCancel(booking._id)} className="text-red-600 hover:text-red-900">Cancel</button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      {/* Booking History Link */}
+      <div className="bg-orange-50 p-8 rounded-xl shadow-md flex justify-between items-center">
+        <div>
+            <h3 className="text-xl font-bold text-gray-900">Your Bookings</h3>
+            <p className="text-gray-600">View past events, manage upcoming bookings, or reschedule.</p>
+        </div>
+        <Link to="/history">
+            <Button className="w-auto px-6">View Booking History</Button>
+        </Link>
       </div>
     </div>
   );

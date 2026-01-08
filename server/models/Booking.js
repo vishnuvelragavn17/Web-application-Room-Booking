@@ -28,6 +28,8 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  address: String,
+  secondaryPhone: String,
   status: {
     type: String,
     enum: ['confirmed', 'cancelled', 'completed'],
