@@ -6,6 +6,7 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -18,6 +19,10 @@ const Header: React.FC = () => {
     { name: 'Services', path: '/services' },
     { name: 'Contact', path: '/contact' },
   ];
+
+  if (user.role === 'admin') {
+    navLinks.push({ name: 'Admin Dashboard', path: '/admin' });
+  }
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">

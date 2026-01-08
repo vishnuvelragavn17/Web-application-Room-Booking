@@ -37,6 +37,25 @@ exports.cancelBookingAdmin = async (req, res) => {
   }
 };
 
+// @desc    Mark booking as completed
+// @route   PUT /api/admin/bookings/:id/complete
+exports.completeBookingAdmin = async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    booking.status = 'completed';
+    await booking.save();
+
+    res.json({ message: 'Booking marked as completed', booking });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Block a date (Create a dummy booking)
 // @route   POST /api/admin/block-date
 exports.blockDate = async (req, res) => {
@@ -44,11 +63,6 @@ exports.blockDate = async (req, res) => {
     const { date, reason } = req.body;
 
     if (!date) return res.status(400).json({ message: 'Date is required' });
-
-    // Create a dummy booking to block the slot
-    // For simplicity, we can block all slots or a specific one.
-    // If we want to block the WHOLE day, we might need multiple entries or a special status.
-    // Let's assume blocking means creating a "confirmed" booking with a system user or admin user.
 
     // Check if any booking exists for that date
     const existingBookings = await Booking.find({ date: new Date(date), status: 'confirmed' });

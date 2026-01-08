@@ -74,6 +74,7 @@ exports.registerUser = async (req, res) => {
       _id: user.id,
       name: user.name,
       mobile: user.mobile,
+      role: user.role,
       token: generateToken(user.id),
     });
   } else {
@@ -93,6 +94,7 @@ exports.loginUser = async (req, res) => {
       _id: user.id,
       name: user.name,
       mobile: user.mobile,
+      role: user.role,
       token: generateToken(user.id),
     });
   } else {
