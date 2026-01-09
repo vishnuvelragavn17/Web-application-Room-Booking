@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
+import { loginUser } from '../../services/authService';
 
 const Login: React.FC = () => {
   const [mobile, setMobile] = useState('');
@@ -15,8 +15,8 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.post('/api/auth/login', { mobile, dob });
-      login(res.data, res.data.token);
+      const data = await loginUser({ mobile, dob });
+      login(data, data.token);
       toast.success('Login Successful');
       navigate('/');
     } catch (error: any) {

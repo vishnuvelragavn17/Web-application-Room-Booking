@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getUserProfile, updateUserProfile } from '../services/userService';
 
 interface UserProfile {
   name: string;
@@ -32,19 +32,17 @@ const Profile: React.FC = () => {
   const fetchProfile = async () => {
     if (!token) return;
     try {
-      const res = await axios.get('/api/users/profile', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setProfile(res.data);
+      const data = await getUserProfile(token);
+      setProfile(data);
       // Initialize form with safe defaults
       setFormData({
-        name: res.data.name || '',
-        mobile: res.data.mobile || '',
-        address: res.data.address || '',
-        city: res.data.city || '',
-        state: res.data.state || '',
-        gender: res.data.gender || '',
-        altMobile: res.data.altMobile || ''
+        name: data.name || '',
+        mobile: data.mobile || '',
+        address: data.address || '',
+        city: data.city || '',
+        state: data.state || '',
+        gender: data.gender || '',
+        altMobile: data.altMobile || ''
       });
     } catch (error) {
       toast.error('Failed to load profile data');
@@ -57,10 +55,8 @@ const Profile: React.FC = () => {
   const handleUpdate = async () => {
     if (!token) return;
     try {
-      const res = await axios.put('/api/users/profile', formData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setProfile(res.data);
+      const data = await updateUserProfile(formData, token);
+      setProfile(data);
       toast.success('Profile Updated');
       setIsEditing(false);
     } catch (error) {

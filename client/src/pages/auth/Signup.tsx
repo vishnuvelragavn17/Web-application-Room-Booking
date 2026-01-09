@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { isValidMobile, isNotEmpty } from '../../utils/validation';
 import { useAuth } from '../../context/AuthContext';
+import { requestOTP, registerUser } from '../../services/authService';
 
 const Signup: React.FC = () => {
   const [step, setStep] = useState(1);
@@ -34,11 +34,15 @@ const Signup: React.FC = () => {
     if (!validateStep1()) return;
 
     try {
-      await axios.post('/api/auth/request-otp', { mobile: formData.mobile });
+      await requestOTP(formData.mobile);
       toast.info('OTP sent! (Check backend console)');
       setStep(2);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to send OTP');
+      const msg = error.response?.data?.message || 'Failed to send OTP';
+      toast.error(msg);
+      if (msg === 'User already exists') {
+          setErrors({ mobile: 'User already exists' });
+      }
     }
   };
 
@@ -50,8 +54,8 @@ const Signup: React.FC = () => {
     }
 
     try {
-      const res = await axios.post('/api/auth/register', formData);
-      login(res.data, res.data.token);
+      const data = await registerUser(formData);
+      login(data, data.token);
       toast.success('Registration Successful');
       navigate('/');
     } catch (error: any) {

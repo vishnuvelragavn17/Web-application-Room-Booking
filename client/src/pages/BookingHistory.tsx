@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { Button } from '../components/ui/Button';
+import { getMyBookings, cancelBooking, postponeBooking, getAvailability } from '../services/bookingService';
 
 interface Booking {
   _id: string;
@@ -29,10 +29,9 @@ const BookingHistory: React.FC = () => {
   const fetchBookings = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('/api/bookings/my', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setBookings(res.data);
+      if (!token) return;
+      const data = await getMyBookings(token);
+      setBookings(data);
     } catch (error) {
       toast.error('Failed to load history');
     } finally {
@@ -44,7 +43,8 @@ const BookingHistory: React.FC = () => {
     if (!confirm('Are you sure? Cancellation fee applies.')) return;
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`/api/bookings/${id}/cancel`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      if (!token) return;
+      await cancelBooking(id, token);
       toast.success('Booking Cancelled');
       fetchBookings();
     } catch (error: any) {
@@ -63,8 +63,8 @@ const BookingHistory: React.FC = () => {
   const checkAvailability = async () => {
     if (!newDate) return;
     try {
-      const res = await axios.get(`/api/bookings/availability?date=${newDate}`);
-      setAvailSlots(res.data);
+      const data = await getAvailability(newDate);
+      setAvailSlots(data);
     } catch (error) {
       toast.error('Could not check slots');
     }
@@ -74,9 +74,8 @@ const BookingHistory: React.FC = () => {
     if (!editingId || !newDate || !newSlot) return;
     try {
         const token = localStorage.getItem('token');
-        await axios.put(`/api/bookings/${editingId}/postpone`, { date: newDate, timeSlot: newSlot }, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        if (!token) return;
+        await postponeBooking(editingId, { date: newDate, timeSlot: newSlot }, token);
         toast.success('Booking Rescheduled!');
         setEditingId(null);
         fetchBookings();

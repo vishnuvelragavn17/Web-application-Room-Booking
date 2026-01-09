@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { isValidMobile, isNotEmpty } from '../utils/validation';
+import { getAvailability, createBooking } from '../services/bookingService';
 
 const BookingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -39,8 +39,8 @@ const BookingPage: React.FC = () => {
   const fetchSlots = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`/api/bookings/availability?date=${date}`);
-      setSlots(res.data);
+      const data = await getAvailability(date);
+      setSlots(data);
     } catch (error) {
       toast.error('Could not fetch slots');
     } finally {
@@ -86,13 +86,11 @@ const BookingPage: React.FC = () => {
         secondaryPhone
       };
 
-      const res = await axios.post('/api/bookings', payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const data = await createBooking(payload, token);
 
       toast.success('Booking Confirmed!');
       // Navigate to Receipt Page with data
-      navigate('/receipt', { state: { booking: res.data } });
+      navigate('/receipt', { state: { booking: data } });
 
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Booking failed');
