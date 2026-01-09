@@ -166,10 +166,12 @@ const AdminDashboard: React.FC = () => {
           </div>
       </div>
 
-      {/* Bookings Table */}
+      {/* Bookings List (Mobile & Desktop) */}
       <div className="bg-white p-6 rounded-xl shadow-md">
         <h2 className="text-xl font-semibold mb-4">Recent Bookings</h2>
-        <div className="overflow-x-auto">
+
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -211,6 +213,35 @@ const AdminDashboard: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-4">
+            {filteredBookings.map((b) => (
+                <div key={b._id} className="border rounded-lg p-4 shadow-sm bg-gray-50">
+                    <div className="flex justify-between items-start mb-2">
+                        <div>
+                            <h3 className="font-bold text-gray-900">{b.eventType}</h3>
+                            <p className="text-xs text-gray-500">{format(new Date(b.date), 'dd MMM yyyy')} | {b.timeSlot}</p>
+                        </div>
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full
+                            ${b.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                              b.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
+                            {b.status}
+                        </span>
+                    </div>
+                    <div className="mb-3 text-sm">
+                        <p><span className="font-semibold">User:</span> {b.user?.name || 'N/A'}</p>
+                        <p><span className="font-semibold">Mobile:</span> {b.user?.mobile}</p>
+                    </div>
+                    {b.status === 'confirmed' && (
+                        <div className="flex gap-2 mt-2">
+                            <Button variant="secondary" onClick={() => handleMarkCompleted(b._id)} className="py-1 px-3 text-xs w-auto">Complete</Button>
+                            <Button variant="danger" onClick={() => handleCancel(b._id)} className="py-1 px-3 text-xs w-auto">Cancel</Button>
+                        </div>
+                    )}
+                </div>
+            ))}
         </div>
       </div>
     </div>

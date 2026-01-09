@@ -43,7 +43,9 @@ const Header: React.FC = () => {
 
             {isAuthenticated ? (
               <>
-                <Link to="/booking" className="bg-primary text-white hover:bg-primaryDark px-4 py-2 rounded-full text-sm font-medium shadow-md transition">Book Now</Link>
+                {user?.role !== 'admin' && (
+                  <Link to="/booking" className="bg-primary text-white hover:bg-primaryDark px-4 py-2 rounded-full text-sm font-medium shadow-md transition">Book Now</Link>
+                )}
                 <Link to="/profile" className="flex items-center text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">
                   <User className="h-4 w-4 mr-1" /> Profile
                 </Link>
@@ -79,7 +81,9 @@ const Header: React.FC = () => {
             ))}
             {isAuthenticated ? (
               <>
-                <Link to="/booking" onClick={() => setIsMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-primary hover:bg-orange-50">Book Now</Link>
+                {user?.role !== 'admin' && (
+                  <Link to="/booking" onClick={() => setIsMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-primary hover:bg-orange-50">Book Now</Link>
+                )}
                 <Link to="/profile" onClick={() => setIsMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-orange-50">My Profile</Link>
                 <button onClick={handleLogout} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50">Logout</button>
               </>

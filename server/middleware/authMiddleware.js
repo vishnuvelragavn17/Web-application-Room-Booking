@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   let token;
 
   if (
@@ -11,7 +12,13 @@ const protect = (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
 
-      req.user = decoded; // { id: userId, mobile: ... }
+      // Fetch user from DB to get role
+      req.user = await User.findById(decoded.id).select('-dob');
+
+      if (!req.user) {
+        return res.status(401).json({ message: 'Not authorized, user not found' });
+      }
+
       next();
     } catch (error) {
       console.error(error);
