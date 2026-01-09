@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
+import { Eye } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { getAllBookings, cancelBookingAdmin, blockDate as blockDateApi } from '../../services/adminService';
 import { useAuth } from '../../context/AuthContext';
+import BookingDetailsModal from '../../components/admin/BookingDetailsModal';
 
 interface Booking {
   _id: string;
@@ -29,6 +31,9 @@ const AdminDashboard: React.FC = () => {
   const [filterDate, setFilterDate] = useState('');
   const [filterTime, setFilterTime] = useState('');
   const [sortOption, setSortOption] = useState<'week' | 'month' | 'all'>('all');
+
+  // Modal State
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
   // Stats
   const [stats, setStats] = useState({ total: 0, revenue: 0, upcoming: 0, completed: 0 });
@@ -240,9 +245,18 @@ const AdminDashboard: React.FC = () => {
                       </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    {b.status === 'confirmed' && (
-                         <button onClick={() => handleCancel(b._id)} className="text-red-600 hover:text-red-900 font-semibold border border-red-200 px-3 py-1 rounded hover:bg-red-50">Cancel Booking</button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setSelectedBooking(b)}
+                            className="text-blue-600 hover:text-blue-900 p-1 hover:bg-blue-50 rounded"
+                            title="View Details"
+                        >
+                            <Eye className="h-5 w-5" />
+                        </button>
+                        {b.status === 'confirmed' && (
+                            <button onClick={() => handleCancel(b._id)} className="text-red-600 hover:text-red-900 text-xs font-semibold border border-red-200 px-2 py-1 rounded hover:bg-red-50">Cancel</button>
+                        )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -269,15 +283,24 @@ const AdminDashboard: React.FC = () => {
                         <p><span className="font-semibold">User:</span> {b.user?.name || 'N/A'}</p>
                         <p><span className="font-semibold">Mobile:</span> {b.user?.mobile}</p>
                     </div>
-                    {b.status === 'confirmed' && (
-                        <div className="flex gap-2 mt-2">
-                            <Button variant="danger" onClick={() => handleCancel(b._id)} className="py-1 px-3 text-xs w-full">Cancel Booking</Button>
-                        </div>
-                    )}
+
+                    <div className="flex gap-2 mt-2">
+                        <Button variant="secondary" onClick={() => setSelectedBooking(b)} className="py-1 px-3 text-xs w-full flex items-center justify-center gap-2">
+                            <Eye className="h-3 w-3" /> View
+                        </Button>
+                        {b.status === 'confirmed' && (
+                            <Button variant="danger" onClick={() => handleCancel(b._id)} className="py-1 px-3 text-xs w-full">Cancel</Button>
+                        )}
+                    </div>
                 </div>
             ))}
         </div>
       </div>
+
+      {/* Details Modal */}
+      {selectedBooking && (
+        <BookingDetailsModal booking={selectedBooking} onClose={() => setSelectedBooking(null)} />
+      )}
     </div>
   );
 };
