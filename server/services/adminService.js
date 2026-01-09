@@ -1,6 +1,8 @@
 const Booking = require('../models/Booking');
+const BlockedDate = require('../models/BlockedDate');
 
 exports.getAllBookingsService = async () => {
+  // Return only real bookings. Blocked dates are in a separate collection.
   return await Booking.find({})
     .populate('user', 'name mobile')
     .sort({ date: -1 });
@@ -20,29 +22,26 @@ exports.cancelBookingAdminService = async (bookingId) => {
 };
 
 exports.blockDateService = async (date, reason, adminId) => {
-  // Check existing
-  const existingBookings = await Booking.find({ date: new Date(date), status: 'confirmed' });
+  const targetDate = new Date(date);
+
+  // 1. Check if already blocked
+  const alreadyBlocked = await BlockedDate.findOne({ date: targetDate });
+  if (alreadyBlocked) {
+    throw new Error('Date is already blocked.');
+  }
+
+  // 2. Check for existing confirmed bookings on that date
+  const existingBookings = await Booking.find({ date: targetDate, status: 'confirmed' });
   if (existingBookings.length > 0) {
       throw new Error('Cannot block date. Existing bookings found.');
   }
 
-  const allSlots = [
-    '09:00-10:00', '10:00-11:00', '11:00-12:00',
-    '12:00-13:00', '13:00-14:00', '14:00-15:00',
-    '15:00-16:00', '16:00-17:00', '17:00-18:00'
-  ];
+  // 3. Create BlockedDate entry
+  await BlockedDate.create({
+    date: targetDate,
+    reason: reason || 'Maintenance',
+    admin: adminId
+  });
 
-  const blockBookings = allSlots.map(slot => ({
-      user: adminId,
-      date: new Date(date),
-      timeSlot: slot,
-      eventType: 'BLOCKED: ' + (reason || 'Maintenance'),
-      status: 'confirmed',
-      paymentStatus: 'paid',
-      totalAmount: 0,
-      advancePaid: 0
-  }));
-
-  await Booking.insertMany(blockBookings);
   return { message: 'Date blocked successfully' };
 };

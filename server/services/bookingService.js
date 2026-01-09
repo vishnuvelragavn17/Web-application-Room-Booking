@@ -1,21 +1,31 @@
 const Booking = require('../models/Booking');
 const Payment = require('../models/Payment');
+const BlockedDate = require('../models/BlockedDate');
 
 exports.getAvailabilityService = async (date) => {
   const searchDate = new Date(date);
 
-  const bookings = await Booking.find({
-    date: searchDate,
-    status: 'confirmed'
-  }).select('timeSlot status');
-
-  const bookedSlots = bookings.map(b => b.timeSlot);
+  // 1. Check if date is blocked by Admin
+  const isBlocked = await BlockedDate.findOne({ date: searchDate });
 
   const allSlots = [
     '09:00-10:00', '10:00-11:00', '11:00-12:00',
     '12:00-13:00', '13:00-14:00', '14:00-15:00',
     '15:00-16:00', '16:00-17:00', '17:00-18:00'
   ];
+
+  if (isBlocked) {
+    // Return all slots as unavailable
+    return allSlots.map(slot => ({ slot, isAvailable: false }));
+  }
+
+  // 2. Check individual bookings
+  const bookings = await Booking.find({
+    date: searchDate,
+    status: 'confirmed'
+  }).select('timeSlot status');
+
+  const bookedSlots = bookings.map(b => b.timeSlot);
 
   return allSlots.map(slot => ({
     slot,
@@ -29,6 +39,12 @@ exports.createBookingService = async (userId, bookingData) => {
 
   try {
     const { date, timeSlot, eventType, attendees, needHelper, foodNeeded, extraItems, address, secondaryPhone } = bookingData;
+
+    // Check if date is blocked
+    const isBlocked = await BlockedDate.findOne({ date: new Date(date) });
+    if (isBlocked) {
+        throw new Error('This date is unavailable/blocked by admin.');
+    }
 
     // SERVER-SIDE PRICING
     const FIXED_TOTAL_AMOUNT = 5000;
